@@ -86,7 +86,7 @@ roslaunch rl_sim gazebo_gr1t1.launch
 
 Thanks to the following repositories for providing the code for the GRx robot model in Gazebo:
 
-- https://github.com/fan-ziqi/rl_sim
+- https://github.com/fan-ziqi/rl_sar
 
 ---
 
