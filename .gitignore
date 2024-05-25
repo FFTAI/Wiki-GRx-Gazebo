@@ -1,0 +1,8 @@
+build
+devel
+logs
+.catkin_tools
+.vscode
+*.csv
+.cache
+*.json

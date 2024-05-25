@@ -1,20 +1,20 @@
 # rl_sim
 
-[中文文档](README_CN.md)
+[English document](README.md)
 
-Simulation verification of robot reinforcement learning algorithms. 
+机器人强化学习算法的仿真验证。
 
-## Preparation
+## 准备
 
-Clone the code
+拉取代码
 
 ```bash
 git clone https://gitee.com/FourierIntelligence/wiki-grx-gazebo.git
 ```
 
-## Dependency
+## 依赖
 
-Download and deploy `libtorch` at any location
+在任意位置下载并部署`libtorch`
 
 ```bash
 cd /path/to/your/torchlib
@@ -23,13 +23,13 @@ unzip libtorch-cxx11-abi-shared-with-deps-2.0.1+cpu.zip -d ./
 echo 'export Torch_DIR=/path/to/your/torchlib' >> ~/.bashrc
 ```
 
-Install dependency packages
+安装依赖库
 
 ```bash
 sudo apt install ros-noetic-teleop-twist-keyboard ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller
 ```
 
-Install yaml-cpp
+安装yaml-cpp
 
 ```bash
 git clone https://github.com/jbeder/yaml-cpp.git
@@ -39,7 +39,7 @@ sudo make install
 sudo ldconfig
 ```
 
-Install lcm
+安装lcm
 
 ```bash
 git clone https://github.com/lcm-proj/lcm.git 
@@ -49,36 +49,36 @@ sudo make install
 sudo ldconfig
 ```
 
-## Compilation
+## 编译
 
 ```bash
 catkin build
 source devel/setup.bash
 ```
 
-## Running
+## 运行
 
-Before running, copy the trained pt model file to `rl_sim/src/rl_sim/models/YOUR_ROBOT_NAME`, and configure the parameters in `config.yaml`.
+运行前请将训练好的pt模型文件拷贝到`rl_sim/src/rl_sim/models/YOUR_ROBOT_NAME`中，并配置`config.yaml`中的参数。
 
-Open a new terminal, launch the gazebo simulation environment
+新建终端，启动gazebo仿真环境
 
 ```bash
 source devel/setup.bash
 roslaunch rl_sim gazebo_gr1t1.launch
 ```
 
-Press **0** on the keyboard to switch the robot to the default standing position, press **P** to switch to RL control mode, and press **1** in any state to switch to the initial lying position. WS controls x-axis, AD controls yaw, and JL controls y-axis.
+按下键盘上的**0**键让机器人切换到默认站起姿态，按下**P**键切换到RL控制模式，任意状态按下**1**键切换到最初的趴下姿态。WS控制x，AD控制yaw，JL控制y。
 
-Press **R** to reset Gazebo environment.
+按**R**重置Gazebo仿真环境。
 
 ## Issues
 1. `catkin build` error info : Unable to find either executable 'empy' or Python module 'em'... try installing the package 'python-empy'
   - https://github.com/ysl208/iRoPro/issues/59
   - `catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3`
 
-## Citation
+## 引用
 
-Please cite the following if you use this code or parts of it:
+如果您使用此代码或其部分内容，请引用以下内容：
 
 ```
 @software{fan-ziqi2024rl_sar,
