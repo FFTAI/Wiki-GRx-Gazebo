@@ -56,8 +56,10 @@ source devel/setup.bash
 
 ```bash
 source devel/setup.bash
-roslaunch rl_sim gazebo_gr1t1.launch
+roslaunch rl_sim gazebo_<ROBOT>.launch
 ```
+
+\<ROBOT\> can be `gr1t1` and `gr1t2`.
 
 8. Control:
     - Press **0** on the keyboard to switch the robot to the default standing position
