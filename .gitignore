@@ -6,3 +6,4 @@ logs
 *.csv
 .cache
 *.json
+.idea
