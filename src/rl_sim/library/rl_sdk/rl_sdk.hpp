@@ -101,6 +101,7 @@ class RL
 {
 public:
     RL(){};
+    ~RL(){};
 
     ModelParams params;
     Observations obs;
