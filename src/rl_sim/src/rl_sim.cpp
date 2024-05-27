@@ -64,7 +64,7 @@ RL_Sim::~RL_Sim()
     loop_keyboard->shutdown();
     loop_control->shutdown();
     loop_rl->shutdown();
-    printf("exit\n");
+    std::cout << LOGGER::INFO << "RL_Sim exit" << std::endl;
 }
 
 void RL_Sim::GetState(RobotState<double> *state)
