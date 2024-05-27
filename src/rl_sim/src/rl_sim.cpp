@@ -69,10 +69,10 @@ RL_Sim::~RL_Sim()
 
 void RL_Sim::GetState(RobotState<double> *state)
 {
-    state->imu.quaternion[0] = pose.orientation.w;
-    state->imu.quaternion[1] = pose.orientation.x;
-    state->imu.quaternion[2] = pose.orientation.y;
-    state->imu.quaternion[3] = pose.orientation.z;
+    state->imu.quaternion[3] = pose.orientation.w;
+    state->imu.quaternion[0] = pose.orientation.x;
+    state->imu.quaternion[1] = pose.orientation.y;
+    state->imu.quaternion[2] = pose.orientation.z;
 
     state->imu.gyroscope[0] = vel.angular.x;
     state->imu.gyroscope[1] = vel.angular.y;
@@ -107,10 +107,6 @@ void RL_Sim::SetCommand(const RobotCommand<double> *command)
 
 void RL_Sim::RobotControl()
 {
-    std::cout << "running_state " << keyboard.keyboard_state
-              << " x" << keyboard.x << " y" << keyboard.y << " yaw" << keyboard.yaw
-              << "      \r";
-
     motiontime++;
 
     if(keyboard.keyboard_state == STATE_RESET_SIMULATION)
@@ -119,8 +115,6 @@ void RL_Sim::RobotControl()
         std_srvs::Empty srv;
         gazebo_reset_client.call(srv);
     }
-
-    // output_dof_pos = this->ComputePosition(this->obs.actions);
 
     GetState(&robot_state);
     StateController(&robot_state, &robot_command);
@@ -158,17 +152,19 @@ void RL_Sim::RunModel()
     if(running_state == STATE_RL_RUNNING)
     {
         // this->obs.lin_vel = torch::tensor({{vel.linear.x, vel.linear.y, vel.linear.z}});
-        this->obs.ang_vel = torch::tensor({{vel.angular.x, vel.angular.y, vel.angular.z}});
+        this->obs.ang_vel = torch::tensor(robot_state.imu.gyroscope).unsqueeze(0);
         // this->obs.commands = torch::tensor({{cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z}});
         this->obs.commands = torch::tensor({{keyboard.x, keyboard.y, keyboard.yaw}});
-        this->obs.base_quat = torch::tensor({{pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w}});
-        this->obs.dof_pos = torch::tensor(mapped_joint_positions).unsqueeze(0);
-        this->obs.dof_vel = torch::tensor(mapped_joint_velocities).unsqueeze(0);
+        this->obs.base_quat = torch::tensor(robot_state.imu.quaternion).unsqueeze(0);
+        this->obs.dof_pos = torch::tensor(robot_state.motor_state.q).narrow(0, 0, params.num_of_dofs).unsqueeze(0);
+        this->obs.dof_vel = torch::tensor(robot_state.motor_state.dq).narrow(0, 0, params.num_of_dofs).unsqueeze(0);
 
         torch::Tensor clamped_actions = this->Forward();
 
         this->obs.actions = clamped_actions;
 
+        // torch::Tensor origin_output_torques = this->ComputeTorques(this->obs.actions);
+        // output_torques = torch::clamp(origin_output_torques, -(this->params.torque_limits), this->params.torque_limits);
         output_dof_pos = this->ComputePosition(this->obs.actions);
     }
 }
@@ -176,26 +172,27 @@ void RL_Sim::RunModel()
 torch::Tensor RL_Sim::ComputeObservation()
 {
     torch::Tensor obs = torch::cat({// this->obs.lin_vel * this->params.lin_vel_scale,
-                                    this->obs.ang_vel * this->params.ang_vel_scale,
+                                    this->QuatRotateInverse(this->obs.base_quat, this->obs.ang_vel) * this->params.ang_vel_scale,
+                                    // this->obs.ang_vel * this->params.ang_vel_scale, // TODO
                                     this->QuatRotateInverse(this->obs.base_quat, this->obs.gravity_vec),
                                     this->obs.commands * this->params.commands_scale,
                                     (this->obs.dof_pos - this->params.default_dof_pos) * this->params.dof_pos_scale,
                                     this->obs.dof_vel * this->params.dof_vel_scale,
                                     this->obs.actions
                                     },1);
-    obs = torch::clamp(obs, -this->params.clip_obs, this->params.clip_obs);
-    return obs;
+    torch::Tensor clamped_obs = torch::clamp(obs, -this->params.clip_obs, this->params.clip_obs);
+    return clamped_obs;
 }
 
 torch::Tensor RL_Sim::Forward()
 {
     torch::autograd::GradMode::set_enabled(false);
 
-    torch::Tensor obs = this->ComputeObservation();
+    torch::Tensor clamped_obs = this->ComputeObservation();
 
     torch::Tensor actions = this->model.forward({obs}).toTensor();
 
-    torch::Tensor clamped_actions = torch::clamp(actions, this->params.clip_actions_min, this->params.clip_actions_max);
+    torch::Tensor clamped_actions = torch::clamp(actions, this->params.clip_actions_lower, this->params.clip_actions_upper);
 
     return clamped_actions;
 }

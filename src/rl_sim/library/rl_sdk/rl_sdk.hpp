@@ -27,9 +27,9 @@ struct RobotState
 {
     struct IMU
     {
-        T quaternion[4] = {1.0, 0.0, 0.0, 0.0}; // w, x, y, z
-        T gyroscope[3] = {0.0, 0.0, 0.0};
-        T accelerometer[3] = {0.0, 0.0, 0.0};
+        std::vector<T> quaternion = {1.0, 0.0, 0.0, 0.0}; // w, x, y, z
+        std::vector<T> gyroscope = {0.0, 0.0, 0.0};
+        std::vector<T> accelerometer = {0.0, 0.0, 0.0};
     } imu;
 
     struct MotorState
@@ -66,8 +66,8 @@ struct ModelParams
     double damping;
     double stiffness;
     double action_scale;
-    torch::Tensor clip_actions_max;
-    torch::Tensor clip_actions_min;
+    torch::Tensor clip_actions_upper;
+    torch::Tensor clip_actions_lower;
     int num_of_dofs;
     double lin_vel_scale;
     double ang_vel_scale;

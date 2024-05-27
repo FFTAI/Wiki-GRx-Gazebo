@@ -1,43 +1,5 @@
 #include "rl_sdk.hpp"
 
-/* You may need to override this ComputeObservation() function
-torch::Tensor RL::ComputeObservation()
-{
-    torch::Tensor obs = torch::cat({(this->QuatRotateInverse(this->base_quat, this->lin_vel)) * this->params.lin_vel_scale,
-                                    (this->QuatRotateInverse(this->obs.base_quat, this->obs.ang_vel)) * this->params.ang_vel_scale,
-                                    this->QuatRotateInverse(this->obs.base_quat, this->obs.gravity_vec),
-                                    this->obs.commands * this->params.commands_scale,
-                                    (this->obs.dof_pos - this->params.default_dof_pos) * this->params.dof_pos_scale,
-                                    this->obs.dof_vel * this->params.dof_vel_scale,
-                                    this->obs.actions},
-                                   1);
-
-    obs = torch::clamp(obs, -this->params.clip_obs, this->params.clip_obs);
-
-    printf("observation size: %d, %d\n", obs.sizes()[0], obs.sizes()[1]);
-
-    return obs;
-}
-*/
-
-/* You may need to override this Forward() function
-torch::Tensor RL::Forward()
-{
-    torch::Tensor obs = this->ComputeObservation();
-
-    torch::Tensor actor_input = torch::cat({obs}, 1);
-
-    torch::Tensor actions = this->actor.forward({actor_input}).toTensor();
-
-    this->obs.actions = actions;
-    torch::Tensor clamped_actions = torch::clamp(actions, -this->params.clip_actions, this->params.clip_actions);
-
-    return clamped_actions;
-}
-*/
-
-
-
 void RL::InitObservations()
 {
     this->obs.lin_vel = torch::tensor({{0.0, 0.0, 0.0}});
@@ -68,8 +30,7 @@ torch::Tensor RL::ComputeTorques(torch::Tensor actions)
 {
     torch::Tensor actions_scaled = actions * this->params.action_scale;
     torch::Tensor output_torques = this->params.rl_kp * (actions_scaled + this->params.default_dof_pos - this->obs.dof_pos) - this->params.rl_kd * this->obs.dof_vel;
-    torch::Tensor clamped = torch::clamp(output_torques, -(this->params.torque_limits), this->params.torque_limits);
-    return clamped;
+    return output_torques;
 }
 
 torch::Tensor RL::ComputePosition(torch::Tensor actions)
@@ -277,8 +238,8 @@ void RL::ReadYaml(std::string robot_name)
     this->params.clip_obs = config["clip_obs"].as<double>();
     this->params.clip_actions = config["clip_actions"].as<double>();
     this->params.action_scale = config["action_scale"].as<double>();
-    this->params.clip_actions_max = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_max"])).view({1, -1});
-    this->params.clip_actions_min = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_min"])).view({1, -1});
+    this->params.clip_actions_upper = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_upper"])).view({1, -1});
+    this->params.clip_actions_lower = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_lower"])).view({1, -1});
     this->params.num_of_dofs = config["num_of_dofs"].as<int>();
     this->params.lin_vel_scale = config["lin_vel_scale"].as<double>();
     this->params.ang_vel_scale = config["ang_vel_scale"].as<double>();
