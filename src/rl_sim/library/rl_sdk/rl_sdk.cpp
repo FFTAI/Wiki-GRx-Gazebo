@@ -52,6 +52,11 @@ torch::Tensor RL::QuatRotateInverse(torch::Tensor q, torch::Tensor v)
 
 void RL::StateController(const RobotState<double> *state, RobotCommand<double> *command)
 {
+    static RobotState<double> start_state;
+    static RobotState<double> now_state;
+    static float getup_percent = 0.0;
+    static float getdown_percent = 0.0;
+
     // waiting
     if(running_state == STATE_WAITING)
     {
@@ -65,8 +70,8 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             getup_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
-                now_pos[i] = state->motor_state.q[i];
-                start_pos[i] = now_pos[i];
+                now_state.motor_state.q[i] = state->motor_state.q[i];
+                start_state.motor_state.q[i] = now_state.motor_state.q[i];
             }
             running_state = STATE_POS_GETUP;
         }
@@ -80,7 +85,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             getup_percent = getup_percent > 1.0 ? 1.0 : getup_percent;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
-                command->motor_command.q[i] = (1 - getup_percent) * now_pos[i] + getup_percent * params.default_dof_pos[0][i].item<double>();
+                command->motor_command.q[i] = (1 - getup_percent) * now_state.motor_state.q[i] + getup_percent * params.default_dof_pos[0][i].item<double>();
                 command->motor_command.dq[i] = 0;
                 command->motor_command.kp[i] = params.fixed_kp[0][i].item<double>();
                 command->motor_command.kd[i] = params.fixed_kd[0][i].item<double>();
@@ -100,7 +105,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             getdown_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
-                now_pos[i] = state->motor_state.q[i];
+                now_state.motor_state.q[i] = state->motor_state.q[i];
             }
             running_state = STATE_POS_GETDOWN;
         }
@@ -133,7 +138,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             getdown_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
-                now_pos[i] = state->motor_state.q[i];
+                now_state.motor_state.q[i] = state->motor_state.q[i];
             }
             running_state = STATE_POS_GETDOWN;
         }
@@ -147,7 +152,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             getdown_percent = getdown_percent > 1.0 ? 1.0 : getdown_percent;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
-                command->motor_command.q[i] = (1 - getdown_percent) * now_pos[i] + getdown_percent * start_pos[i];
+                command->motor_command.q[i] = (1 - getdown_percent) * now_state.motor_state.q[i] + getdown_percent * start_state.motor_state.q[i];
                 command->motor_command.dq[i] = 0;
                 command->motor_command.kp[i] = params.fixed_kp[0][i].item<double>();
                 command->motor_command.kd[i] = params.fixed_kd[0][i].item<double>();
