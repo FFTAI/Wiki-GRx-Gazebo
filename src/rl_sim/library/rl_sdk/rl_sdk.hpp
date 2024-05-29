@@ -58,9 +58,9 @@ enum STATE {
     STATE_RESET_SIMULATION,
 };
 
-struct KeyBoard
+struct Control
 {
-    STATE keyboard_state;
+    STATE control_state;
     double x = 0.0;
     double y = 0.0;
     double yaw = 0.0;
@@ -81,7 +81,6 @@ struct ModelParams
     double dof_pos_scale;
     double dof_vel_scale;
     double clip_obs;
-    double clip_actions;
     torch::Tensor torque_limits;
     torch::Tensor rl_kd;
     torch::Tensor rl_kp;
@@ -119,7 +118,7 @@ public:
     // init
     void InitObservations();
     void InitOutputs();
-    void InitKeyboard();
+    void InitControl();
 
     // rl functions
     virtual torch::Tensor Forward() = 0;
@@ -134,9 +133,9 @@ public:
     // yaml params
     void ReadYaml(std::string robot_name);
 
-    // keyboard
-    KeyBoard keyboard;
-    void RunKeyboard();
+    // control
+    Control control;
+    void KeyboardInterface();
 
     // others
     std::string robot_name;

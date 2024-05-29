@@ -18,12 +18,12 @@ void RL::InitOutputs()
     this->output_dof_pos = params.default_dof_pos;
 }
 
-void RL::InitKeyboard()
+void RL::InitControl()
 {
-    this->keyboard.keyboard_state = STATE_WAITING;
-    this->keyboard.x = 0.0;
-    this->keyboard.y = 0.0;
-    this->keyboard.yaw = 0.0;
+    this->control.control_state = STATE_WAITING;
+    this->control.x = 0.0;
+    this->control.y = 0.0;
+    this->control.yaw = 0.0;
 }
 
 torch::Tensor RL::ComputeTorques(torch::Tensor actions)
@@ -59,9 +59,9 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
         {
             command->motor_command.q[i] = state->motor_state.q[i];
         }
-        if(keyboard.keyboard_state == STATE_POS_GETUP)
+        if(control.control_state == STATE_POS_GETUP)
         {
-            keyboard.keyboard_state = STATE_WAITING;
+            control.control_state = STATE_WAITING;
             getup_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
@@ -88,15 +88,15 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             }
             std::cout << LOGGER::INFO << "Getting up " << std::fixed << std::setprecision(2) << getup_percent * 100.0 << "%\r";
         }
-        if(keyboard.keyboard_state == STATE_RL_INIT)
+        if(control.control_state == STATE_RL_INIT)
         {
             std::cout << std::endl;
-            keyboard.keyboard_state = STATE_WAITING;
+            control.control_state = STATE_WAITING;
             running_state = STATE_RL_INIT;
         }
-        else if(keyboard.keyboard_state == STATE_POS_GETDOWN)
+        else if(control.control_state == STATE_POS_GETDOWN)
         {
-            keyboard.keyboard_state = STATE_WAITING;
+            control.control_state = STATE_WAITING;
             getdown_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
@@ -113,7 +113,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             running_state = STATE_RL_RUNNING;
             this->InitObservations();
             this->InitOutputs();
-            this->InitKeyboard();
+            this->InitControl();
         }
     }
     // rl loop
@@ -127,9 +127,9 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             command->motor_command.kd[i] = params.rl_kd[0][i].item<double>();
             command->motor_command.tau[i] = 0;
         }
-        if(keyboard.keyboard_state == STATE_POS_GETDOWN)
+        if(control.control_state == STATE_POS_GETDOWN)
         {
-            keyboard.keyboard_state = STATE_WAITING;
+            control.control_state = STATE_WAITING;
             getdown_percent = 0.0;
             for(int i = 0; i < params.num_of_dofs; ++i)
             {
@@ -161,7 +161,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             running_state = STATE_WAITING;
             this->InitObservations();
             this->InitOutputs();
-            this->InitKeyboard();
+            this->InitControl();
         }
     }
 }
@@ -191,10 +191,10 @@ void RL::TorqueProtect(torch::Tensor origin_output_torques)
             double limit_lower = -this->params.torque_limits[0][index].item<double>();
             double limit_upper = this->params.torque_limits[0][index].item<double>();
 
-            std::cout << LOGGER::ERROR << "Torque(" << i+1 << ")=" << value << " out of range(" << limit_lower << ", " << limit_upper << ")" << std::endl;
+            std::cout << LOGGER::ERROR << "Torque(" << index + 1 << ")=" << value << " out of range(" << limit_lower << ", " << limit_upper << ")" << std::endl;
             std::cout << LOGGER::ERROR << "Switching to STATE_POS_GETDOWN"<< std::endl;
         }
-        keyboard.keyboard_state = STATE_POS_GETDOWN;
+        control.control_state = STATE_POS_GETDOWN;
     }
 }
 
@@ -217,11 +217,11 @@ static bool kbhit()
     return byteswaiting > 0;
 }
 
-void RL::RunKeyboard()
+void RL::KeyboardInterface()
 {
     if(running_state == STATE_RL_RUNNING)
     {
-        std::cout << LOGGER::INFO << "RL Controller x:" << keyboard.x << " y:" << keyboard.y << " yaw:" << keyboard.yaw << "          \r";
+        std::cout << LOGGER::INFO << "RL Controller x:" << control.x << " y:" << control.y << " yaw:" << control.yaw << "          \r";
     }
 
     if(kbhit())
@@ -229,20 +229,20 @@ void RL::RunKeyboard()
         int c = fgetc(stdin);
         switch(c)
         {
-            case '0': keyboard.keyboard_state = STATE_POS_GETUP; break;
-            case 'p': keyboard.keyboard_state = STATE_RL_INIT; break;
-            case '1': keyboard.keyboard_state = STATE_POS_GETDOWN; break;
+            case '0': control.control_state = STATE_POS_GETUP; break;
+            case 'p': control.control_state = STATE_RL_INIT; break;
+            case '1': control.control_state = STATE_POS_GETDOWN; break;
             case 'q': break;
-            case 'w': keyboard.x += 0.1; break;
-            case 's': keyboard.x -= 0.1; break;
-            case 'a': keyboard.yaw += 0.1; break;
-            case 'd': keyboard.yaw -= 0.1; break;
+            case 'w': control.x += 0.1; break;
+            case 's': control.x -= 0.1; break;
+            case 'a': control.yaw += 0.1; break;
+            case 'd': control.yaw -= 0.1; break;
             case 'i': break;
             case 'k': break;
-            case 'j': keyboard.y += 0.1; break;
-            case 'l': keyboard.y -= 0.1; break;
-            case ' ': keyboard.x = 0; keyboard.y = 0; keyboard.yaw = 0; break;
-            case 'r': keyboard.keyboard_state = STATE_RESET_SIMULATION; break;
+            case 'j': control.y += 0.1; break;
+            case 'l': control.y -= 0.1; break;
+            case ' ': control.x = 0; control.y = 0; control.yaw = 0; break;
+            case 'r': control.control_state = STATE_RESET_SIMULATION; break;
             default: break;
         }
     }
@@ -275,7 +275,6 @@ void RL::ReadYaml(std::string robot_name)
     this->params.model_name = config["model_name"].as<std::string>();
     this->params.num_observations = config["num_observations"].as<int>();
     this->params.clip_obs = config["clip_obs"].as<double>();
-    this->params.clip_actions = config["clip_actions"].as<double>();
     this->params.action_scale = config["action_scale"].as<double>();
     this->params.clip_actions_upper = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_upper"])).view({1, -1});
     this->params.clip_actions_lower = torch::tensor(ReadVectorFromYaml<double>(config["clip_actions_lower"])).view({1, -1});
