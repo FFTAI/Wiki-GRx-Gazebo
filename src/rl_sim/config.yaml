@@ -1,5 +1,7 @@
 gr1t1:
   model_name: "model_4000_jit.pt"
+  dt: 0.001
+  decimation: 20
   num_observations: 39
   clip_obs: 100.0
   clip_actions_lower: [-0.4391, -1.0491, -2.0991, -0.4391, -1.3991,
@@ -30,6 +32,8 @@ gr1t1:
 
 gr1t2:
   model_name: "model_4000_jit.pt"
+  dt: 0.001
+  decimation: 20
   num_observations: 39
   clip_obs: 100.0
   clip_actions_lower: [-0.4391, -1.0491, -2.0991, -0.4391, -1.3991,

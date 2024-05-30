@@ -45,12 +45,12 @@ RL_Sim::RL_Sim()
     this->joint_state_subscriber = nh.subscribe<sensor_msgs::JointState>(this->ros_namespace + "joint_states", 10, &RL_Sim::JointStatesCallback, this);
 
     // service
-    this->gazebo_reset_client = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_simulation");
-    
+    this->gazebo_set_model_state_client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
+
     // loop
-    this->loop_keyboard = std::make_shared<LoopFunc>("loop_keyboard", 0.05 ,    std::bind(&RL_Sim::KeyboardInterface, this));
-    this->loop_control  = std::make_shared<LoopFunc>("loop_control" , 0.002,    std::bind(&RL_Sim::RobotControl     , this));
-    this->loop_rl       = std::make_shared<LoopFunc>("loop_rl"      , 0.02 ,    std::bind(&RL_Sim::RunModel         , this));
+    this->loop_keyboard = std::make_shared<LoopFunc>("loop_keyboard", 0.05, std::bind(&RL_Sim::KeyboardInterface, this));
+    this->loop_control  = std::make_shared<LoopFunc>("loop_control", this->params.dt, std::bind(&RL_Sim::RobotControl, this));
+    this->loop_rl = std::make_shared<LoopFunc>("loop_rl", this->params.dt * this->params.decimation, std::bind(&RL_Sim::RunModel, this));
     this->loop_keyboard->start();
     this->loop_control->start();
     this->loop_rl->start();
@@ -108,9 +108,14 @@ void RL_Sim::RobotControl()
 
     if(this->control.control_state == STATE_RESET_SIMULATION)
     {
+        gazebo_msgs::SetModelState set_model_state;
+        std::string gazebo_model_name = this->robot_name + "_gazebo";
+        set_model_state.request.model_state.model_name = gazebo_model_name;
+        set_model_state.request.model_state.pose.position.z = 1.0;
+        set_model_state.request.model_state.reference_frame = "world";
+        this->gazebo_set_model_state_client.call(set_model_state);
+
         this->control.control_state = STATE_WAITING;
-        std_srvs::Empty srv;
-        this->gazebo_reset_client.call(srv);
     }
 
     this->GetState(&this->robot_state);

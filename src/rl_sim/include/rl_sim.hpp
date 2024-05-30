@@ -10,6 +10,7 @@
 #include <geometry_msgs/Twist.h>
 #include "robot_msgs/MotorCommand.h"
 #include <csignal>
+#include <gazebo_msgs/SetModelState.h>
 
 class RL_Sim : public RL
 {
@@ -38,7 +39,7 @@ private:
     ros::Subscriber model_state_subscriber;
     ros::Subscriber joint_state_subscriber;
     ros::Subscriber cmd_vel_subscriber;
-    ros::ServiceClient gazebo_reset_client;
+    ros::ServiceClient gazebo_set_model_state_client;
     std::map<std::string, ros::Publisher> joint_publishers;
     std::vector<robot_msgs::MotorCommand> joint_publishers_commands;
     void ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr &msg);

@@ -74,6 +74,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
                 start_state.motor_state.q[i] = now_state.motor_state.q[i];
             }
             this->running_state = STATE_POS_GETUP;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_POS_GETUP" << std::endl;
         }
     }
     // stand up (position control)
@@ -81,7 +82,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
     {
         if(getup_percent < 1.0)
         {
-            getup_percent += 1 / 1000.0;
+            getup_percent += 1 / 500.0;
             getup_percent = getup_percent > 1.0 ? 1.0 : getup_percent;
             for(int i = 0; i < this->params.num_of_dofs; ++i)
             {
@@ -95,9 +96,9 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
         }
         if(this->control.control_state == STATE_RL_INIT)
         {
-            std::cout << std::endl;
             this->control.control_state = STATE_WAITING;
             this->running_state = STATE_RL_INIT;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_RL_INIT" << std::endl;
         }
         else if(this->control.control_state == STATE_POS_GETDOWN)
         {
@@ -108,6 +109,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
                 now_state.motor_state.q[i] = state->motor_state.q[i];
             }
             this->running_state = STATE_POS_GETDOWN;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_POS_GETDOWN" << std::endl;
         }
     }
     // init obs and start rl loop
@@ -115,15 +117,17 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
     {
         if(getup_percent == 1)
         {
-            this->running_state = STATE_RL_RUNNING;
             this->InitObservations();
             this->InitOutputs();
             this->InitControl();
+            this->running_state = STATE_RL_RUNNING;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_RL_RUNNING" << std::endl;
         }
     }
     // rl loop
     else if(this->running_state == STATE_RL_RUNNING)
     {
+        std::cout << LOGGER::INFO << "RL Controller x:" << this->control.x << " y:" << this->control.y << " yaw:" << this->control.yaw << "          \r";
         for(int i = 0; i < this->params.num_of_dofs; ++i)
         {
             command->motor_command.q[i] =  this->output_dof_pos[0][i].item<double>();
@@ -141,6 +145,18 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
                 now_state.motor_state.q[i] = state->motor_state.q[i];
             }
             this->running_state = STATE_POS_GETDOWN;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_POS_GETDOWN" << std::endl;
+        }
+        else if(this->control.control_state == STATE_POS_GETUP)
+        {
+            this->control.control_state = STATE_WAITING;
+            getup_percent = 0.0;
+            for(int i = 0; i < this->params.num_of_dofs; ++i)
+            {
+                now_state.motor_state.q[i] = state->motor_state.q[i];
+            }
+            this->running_state = STATE_POS_GETUP;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_POS_GETUP" << std::endl;
         }
     }
     // get down (position control)
@@ -148,7 +164,7 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
     {
         if(getdown_percent < 1.0)
         {
-            getdown_percent += 1 / 1000.0;
+            getdown_percent += 1 / 500.0;
             getdown_percent = getdown_percent > 1.0 ? 1.0 : getdown_percent;
             for(int i = 0; i < this->params.num_of_dofs; ++i)
             {
@@ -162,11 +178,11 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
         }
         if(getdown_percent == 1)
         {
-            std::cout << std::endl;
-            this->running_state = STATE_WAITING;
             this->InitObservations();
             this->InitOutputs();
             this->InitControl();
+            this->running_state = STATE_WAITING;
+            std::cout << std::endl << LOGGER::INFO << "Switching to STATE_WAITING" << std::endl;
         }
     }
 }
@@ -196,10 +212,11 @@ void RL::TorqueProtect(torch::Tensor origin_output_torques)
             double limit_lower = -this->params.torque_limits[0][index].item<double>();
             double limit_upper = this->params.torque_limits[0][index].item<double>();
 
-            std::cout << LOGGER::ERROR << "Torque(" << index + 1 << ")=" << value << " out of range(" << limit_lower << ", " << limit_upper << ")" << std::endl;
-            std::cout << LOGGER::ERROR << "Switching to STATE_POS_GETDOWN"<< std::endl;
+            std::cout << LOGGER::WARNING << "Torque(" << index + 1 << ")=" << value << " out of range(" << limit_lower << ", " << limit_upper << ")" << std::endl;
         }
-        this->control.control_state = STATE_POS_GETDOWN;
+        // Just a reminder, no protection
+        // this->control.control_state = STATE_POS_GETDOWN;
+        // std::cout << LOGGER::INFO << "Switching to STATE_POS_GETDOWN"<< std::endl;
     }
 }
 
@@ -224,11 +241,6 @@ static bool kbhit()
 
 void RL::KeyboardInterface()
 {
-    if(this->running_state == STATE_RL_RUNNING)
-    {
-        std::cout << LOGGER::INFO << "RL Controller x:" << this->control.x << " y:" << this->control.y << " yaw:" << this->control.yaw << "          \r";
-    }
-
     if(kbhit())
     {
         int c = fgetc(stdin);
@@ -278,6 +290,8 @@ void RL::ReadYaml(std::string robot_name)
 	}
 
     this->params.model_name = config["model_name"].as<std::string>();
+    this->params.dt = config["dt"].as<double>();
+    this->params.decimation = config["decimation"].as<int>();
     this->params.num_observations = config["num_observations"].as<int>();
     this->params.clip_obs = config["clip_obs"].as<double>();
     this->params.action_scale = config["action_scale"].as<double>();
