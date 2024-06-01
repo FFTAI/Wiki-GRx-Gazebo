@@ -42,7 +42,7 @@ wget http://fishros.com/install -O fishros && . fishros
 5. Clone the code
 
 ```bash
-git clone https://github.com/FFTAI/wiki-grx-gazebo.git
+git clone https://gitee.com/FourierIntelligence/wiki-grx-gazebo.git
 ```
 
 6. Build the project
