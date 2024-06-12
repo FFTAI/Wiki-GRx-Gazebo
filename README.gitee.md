@@ -48,6 +48,7 @@ git clone https://gitee.com/FourierIntelligence/wiki-grx-gazebo.git
 6. Build the project
 
 ```bash
+catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3
 catkin build
 source devel/setup.bash
 ```
@@ -62,17 +63,9 @@ roslaunch rl_sim gazebo_<ROBOT>.launch
 \<ROBOT\> can be `gr1t1` and `gr1t2`.
 
 8. Control:
-    - Press **0** on the keyboard to switch the robot to the default standing position
-    - press **P** to switch to RL control mode
-    - press **1** in any state to switch to the initial lying position.
+    - Click the start button at the bottom of Gazebo, the robot should start running RL policy.
     - **W** and **S** controls x-axis, **A** and **D** controls yaw, and **J** and **L** controls y-axis.
-    - Press **R** to reset Gazebo environment.
-
-## Known Issues
-
-1. `catkin build` error info : Unable to find either executable 'empy' or Python module 'em'... try installing the package 'python-empy'
-    - https://github.com/ysl208/iRoPro/issues/59
-    - `catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3`
+    - If robot falls down, press **R** to reset Gazebo environment.
 
 ## Thanks
 

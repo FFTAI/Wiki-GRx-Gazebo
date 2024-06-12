@@ -141,7 +141,7 @@ public:
 
     // others
     std::string robot_name;
-    STATE running_state = STATE_WAITING;
+    STATE running_state = STATE_RL_RUNNING; // default running_state set to STATE_RL_RUNNING
 
     // protect func
     void TorqueProtect(torch::Tensor origin_output_torques);
