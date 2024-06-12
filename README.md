@@ -63,8 +63,9 @@ roslaunch rl_sim gazebo_<ROBOT>.launch
 \<ROBOT\> can be `gr1t1` and `gr1t2`.
 
 8. Control:
-    - Click the start button at the bottom of Gazebo, the robot should start running RL policy.
+    - Press **\<Enter\>** to toggle simulation start/stop.
     - **W** and **S** controls x-axis, **A** and **D** controls yaw, and **J** and **L** controls y-axis.
+    - Press **\<Space\>** to sets all control commands to zero.
     - If robot falls down, press **R** to reset Gazebo environment.
 
 ## Thanks
