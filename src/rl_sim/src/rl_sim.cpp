@@ -46,6 +46,8 @@ RL_Sim::RL_Sim()
 
     // service
     this->gazebo_set_model_state_client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
+    this->gazebo_pause_physics_client = nh.serviceClient<std_srvs::Empty>("/gazebo/pause_physics");
+    this->gazebo_unpause_physics_client = nh.serviceClient<std_srvs::Empty>("/gazebo/unpause_physics");
 
     // loop
     this->loop_keyboard = std::make_shared<LoopFunc>("loop_keyboard", 0.05, std::bind(&RL_Sim::KeyboardInterface, this));
@@ -104,8 +106,6 @@ void RL_Sim::SetCommand(const RobotCommand<double> *command)
 
 void RL_Sim::RobotControl()
 {
-    this->motiontime++;
-
     if(this->control.control_state == STATE_RESET_SIMULATION)
     {
         gazebo_msgs::SetModelState set_model_state;
@@ -117,10 +117,27 @@ void RL_Sim::RobotControl()
 
         this->control.control_state = STATE_WAITING;
     }
+    if(this->control.control_state == STATE_TOGGLE_SIMULATION)
+    {
+        std_srvs::Empty empty;
+        if(simulation_running)
+        {
+            this->gazebo_pause_physics_client.call(empty);
+        }
+        else
+        {
+            this->gazebo_unpause_physics_client.call(empty);
+        }
+        simulation_running = !simulation_running;
+        this->control.control_state = STATE_WAITING;
+    }
 
-    this->GetState(&this->robot_state);
-    this->StateController(&this->robot_state, &this->robot_command);
-    this->SetCommand(&this->robot_command);
+    if(simulation_running)
+    {
+        this->GetState(&this->robot_state);
+        this->StateController(&this->robot_state, &this->robot_command);
+        this->SetCommand(&this->robot_command);
+    }
 }
 
 void RL_Sim::ModelStatesCallback(const gazebo_msgs::ModelStates::ConstPtr &msg)
@@ -151,7 +168,7 @@ void RL_Sim::JointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
 
 void RL_Sim::RunModel()
 {
-    if(running_state == STATE_RL_RUNNING)
+    if(running_state == STATE_RL_RUNNING && simulation_running)
     {
         // this->obs.lin_vel = torch::tensor({{this->vel.linear.x, this->vel.linear.y, this->vel.linear.z}});
         this->obs.ang_vel = torch::tensor(this->robot_state.imu.gyroscope).unsqueeze(0);
@@ -167,7 +184,7 @@ void RL_Sim::RunModel()
 
         torch::Tensor origin_output_torques = this->ComputeTorques(this->obs.actions);
 
-        this->TorqueProtect(origin_output_torques);
+        // this->TorqueProtect(origin_output_torques);
 
         this->output_torques = torch::clamp(origin_output_torques, -(this->params.torque_limits), this->params.torque_limits);
         this->output_dof_pos = this->ComputePosition(this->obs.actions);
