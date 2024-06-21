@@ -1,5 +1,6 @@
 gr1t1:
-  model_name: "model_4000_jit.pt"
+  stand_model_name: "stand_model_jit.pt"
+  walk_model_name: "walk_model_jit.pt"
   dt: 0.001
   decimation: 20
   num_observations: 39
@@ -31,7 +32,8 @@ gr1t1:
                            "r_hip_roll_controller", "r_hip_yaw_controller", "r_hip_pitch_controller", "r_knee_pitch_controller", "r_ankle_pitch_controller"]
 
 gr1t2:
-  model_name: "model_4000_jit.pt"
+  stand_model_name: "stand_model_jit.pt"
+  walk_model_name: "walk_model_jit.pt"
   dt: 0.001
   decimation: 20
   num_observations: 39

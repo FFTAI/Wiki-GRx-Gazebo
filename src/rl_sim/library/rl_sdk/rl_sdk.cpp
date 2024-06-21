@@ -185,6 +185,23 @@ void RL::StateController(const RobotState<double> *state, RobotCommand<double> *
             std::cout << std::endl << LOGGER::INFO << "Switching to STATE_WAITING" << std::endl;
         }
     }
+
+    if(this->control.control_state == STATE_RL_STAND)
+    {
+        this->model = this->stand_model;
+        this->InitObservations();
+        this->InitOutputs();
+        this->InitControl();
+        std::cout << std::endl << LOGGER::INFO << "Switching to STATE_RL_STAND" << std::endl;
+    }
+    else if(this->control.control_state == STATE_RL_WALK)
+    {
+        this->model = this->walk_model;
+        this->InitObservations();
+        this->InitOutputs();
+        this->InitControl();
+        std::cout << std::endl << LOGGER::INFO << "Switching to STATE_RL_WALK" << std::endl;
+    }
 }
 
 void RL::TorqueProtect(torch::Tensor origin_output_torques)
@@ -249,6 +266,8 @@ void RL::KeyboardInterface()
             case '0': this->control.control_state = STATE_POS_GETUP; break;
             case 'p': this->control.control_state = STATE_RL_INIT; break;
             case '1': this->control.control_state = STATE_POS_GETDOWN; break;
+            case 't': this->control.control_state = STATE_RL_STAND; break;
+            case 'y': this->control.control_state = STATE_RL_WALK; break;
             case 'q': break;
             case 'w': this->control.x += 0.1; break;
             case 's': this->control.x -= 0.1; break;
@@ -290,7 +309,8 @@ void RL::ReadYaml(std::string robot_name)
 		return;
 	}
 
-    this->params.model_name = config["model_name"].as<std::string>();
+    this->params.walk_model_name = config["walk_model_name"].as<std::string>();
+    this->params.stand_model_name = config["stand_model_name"].as<std::string>();
     this->params.dt = config["dt"].as<double>();
     this->params.decimation = config["decimation"].as<int>();
     this->params.num_observations = config["num_observations"].as<int>();

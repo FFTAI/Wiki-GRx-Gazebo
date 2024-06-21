@@ -28,8 +28,11 @@ RL_Sim::RL_Sim()
     this->InitControl();
 
     // model
-    std::string model_path = std::string(CMAKE_CURRENT_SOURCE_DIR) + "/models/" + this->robot_name + "/" + this->params.model_name;
-    this->model = torch::jit::load(model_path);
+    std::string stand_model_path = std::string(CMAKE_CURRENT_SOURCE_DIR) + "/models/" + this->robot_name + "/" + this->params.stand_model_name;
+    this->stand_model = torch::jit::load(stand_model_path);
+    std::string walk_model_path = std::string(CMAKE_CURRENT_SOURCE_DIR) + "/models/" + this->robot_name + "/" + this->params.walk_model_name;
+    this->walk_model = torch::jit::load(walk_model_path);
+    this->model = this->walk_model; // default to walk model
 
     // publisher
     nh.param<std::string>("ros_namespace", this->ros_namespace, "");

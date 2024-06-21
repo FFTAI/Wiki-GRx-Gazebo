@@ -53,6 +53,8 @@ enum STATE {
     STATE_WAITING = 0,
     STATE_POS_GETUP,
     STATE_RL_INIT,
+    STATE_RL_STAND,
+    STATE_RL_WALK,
     STATE_RL_RUNNING,
     STATE_POS_GETDOWN,
     STATE_RESET_SIMULATION,
@@ -69,7 +71,8 @@ struct Control
 
 struct ModelParams
 {
-    std::string model_name;
+    std::string stand_model_name;
+    std::string walk_model_name;
     double dt;
     int decimation;
     int num_observations;
@@ -151,6 +154,8 @@ public:
 protected:
     // rl module
     torch::jit::script::Module model;
+    torch::jit::script::Module walk_model;
+    torch::jit::script::Module stand_model;
     // output buffer
     torch::Tensor output_torques;
     torch::Tensor output_dof_pos;

@@ -64,8 +64,9 @@ roslaunch rl_sim gazebo_<ROBOT>.launch
 
 8. Control:
     - Press **\<Enter\>** to toggle simulation start/stop.
-    - **W** and **S** controls x-axis, **A** and **D** controls yaw, and **J** and **L** controls y-axis.
+    - **w** and **s** controls x-axis, **a** and **d** controls yaw, and **j** and **l** controls y-axis.
     - Press **\<Space\>** to sets all control commands to zero.
+    - Press **t** switch to RL stand mode. Press **y** switch to RL walk mode.
     - If robot falls down, press **R** to reset Gazebo environment.
 
 ## Thanks
